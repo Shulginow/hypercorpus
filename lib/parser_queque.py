@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, '../lib')
 sys.path.insert(0, '..')
 sys.path.insert(0, '/home/v/vstoch2s/semproxy/Hyperco/')
- 
+
 import pandas  as pd
 import re
 import requests
@@ -51,11 +51,13 @@ def get_data_article(class_inst, href):
 
 
 def get_html(url, sess):
+    """Получение кода HTML"""
     data = sess.get(url, headers=config.headers)
     data.connection.close()
     return data.text
 
 def get_data(url, sess):
+    """Получение объекта Beautiful Soup"""
     data = get_html(url, sess)
     soup=bs4.BeautifulSoup(data,'html.parser')
     return soup

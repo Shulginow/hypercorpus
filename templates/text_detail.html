@@ -1,0 +1,65 @@
+{% extends "index.html" %}
+
+
+{% block charts_html %}
+<h6 class="mt-3" >Слова в ссылках между документами</h6>
+<h3>{{l.link_norm}}</h3>
+
+<p>{{l.link_sentense}}</p>
+
+<div class="row">
+
+  <div class="col">
+    <table class="table table-sm">
+    <thead class="thead-dark">
+      <tr>
+        <th scope="col">Параметры</th>
+        <th scope="col">Исходный текст</th>
+        <th scope="col">Целевой текст</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">URL</th>
+        <td><a href="https://{{l.document_url}}">{{l.document_url}}</a></td>
+        <td><a href="https://{{l.source_url}}">{{l.source_url}}</a></td>
+      </tr>
+      <tr>
+        <th scope="row">Заголовок</th>
+        <td>{{l.document_title}}</td>
+        <td>{{l.source_title}}</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="text-nowrap">TOP 5 TF-IDF</span></th>
+        <td><small>{{l.document_text_tfidf_top}}</small></td>
+        <td><small>{{l.source_text_tfidf_top}}</small></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+    <div class="col">
+
+      <h5>Близость текст ссылки</h5>
+      <p>
+        текст ссылки - заголовок: {{l.sim_stitle_link}}<br />
+        текст ссылки - топ 5 слов TF-IDF,  среднее: {{l.sim_stfidf5_link}} <br />
+        текст ссылки - топ 5 слов TF-IDF, макс: {{l.sim_stfidf5_link_max}}
+      </p>
+
+      <h5>Близость предложение ссылки</h5>
+      <p>предложение ссылки - заголовок {{l.sim_stitle_lsentense}}</p>
+
+      <h5>Близость текст-текст</h5>
+      <p>{{l.sim_text_w_tfifd}}</p>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block charts_scripts %}
+
+{% endblock %}

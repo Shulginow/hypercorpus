@@ -1,0 +1,67 @@
+<form method = "POST">
+  <fieldset class="form-group">
+      <div class="row">
+
+        <div class="col-sm-3">
+          <legend class="pt-0" style="font-size: 1rem;">
+              <strong>Часть речи</strong>
+          </legend>
+          {%- for val in pos_options %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="{{val[1]}}" id="{{val[1]}}" value="1"
+              {% if val[1] in pos_checked %}
+                checked
+              {% endif %}
+              >
+              <label class="form-check-label" for="gridRadios1">
+                {{val[0]}}
+              </label>
+            </div>
+          {%- endfor %}
+        </div>
+        <div class="col-sm-3">
+          <legend class="pt-0" style="font-size: 1rem;">
+              <strong>Кол-во слов в ссылке</strong>
+          </legend>
+          {%- for val in count_options %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="{{val[1]}}" id="{{val[1]}}" value="1"
+              {% if val[1] in count_checked %}
+                checked
+              {% endif %}
+              >
+              <label class="form-check-label" for="gridRadios1">
+                {{val[0]}}
+              </label>
+            </div>
+
+            {%- endfor %}
+        </div>
+        <div class="col-sm-3">
+
+          <legend class="pt-0" style="font-size: 1rem;">
+              <strong>Синтаксис</strong>
+          </legend>
+
+          {%- for val in syntax_options %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="{{val[1]}}" id="{{val[1]}}" value="1"
+            {% if val[1] in syntax_checked %}
+              checked
+            {% endif %}
+            >
+            <label class="form-check-label" for="gridRadios1">
+              {{val[0]}}
+            </label>
+          </div>
+          {%- endfor %}
+        </div>
+        <div class="col-sm-3">
+          <button type="submit" class="btn btn-primary">Применить</button>
+        </div>
+      </div>
+    </fieldset>
+
+
+
+</form>

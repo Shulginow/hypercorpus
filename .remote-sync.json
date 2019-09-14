@@ -1,0 +1,19 @@
+{
+  "logger": {
+    "title": "Remote Sync"
+  },
+  "uploadOnSave": false,
+  "useAtomicWrites": false,
+  "deleteLocal": false,
+  "hostname": "hypercorpus.ru",
+  "port": "22",
+  "target": "semproxy/Hyperco",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "vstoch2s",
+  "password": "Moneyba11",
+  "watch": [],
+  "transport": "scp"
+}

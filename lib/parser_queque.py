@@ -151,7 +151,7 @@ def queque_add_wait(url, source_lib):
 
 
 def get_candidates(skip_pages, source_lib):
-    ''''''
+    '''Получение кандидатов из очереди'''
     # .where(LinkQueque.url.iregexp(skip_pages))
     query= LinkQueque.select(LinkQueque.url).where(LinkQueque.status == 'wait')\
     .where(LinkQueque.url_domain << source_lib).order_by(LinkQueque.id.desc()).limit(1000).dicts()

@@ -8,6 +8,136 @@ from models import *
 from functools import reduce
 
 
+
+def get_domain_count():
+
+    ls= LinkStat.select(LinkStat.document_domain,fn.Count(LinkStat.id)\
+    .alias('count')).group_by(LinkStat.document_domain)\
+    .having(fn.Count(LinkStat.id) > 100).order_by(fn.Count(LinkStat.id).desc()).dicts()
+    ls = [i for i in ls]
+
+    x=[i['document_domain'] for i in ls]
+    y=[i['count'] for i in ls]
+
+    chart_data = {'x':x,'y':y, 'type':'bar'}
+    chart_settings = {'title':'Количество сайтов со ссылками'}
+    chart_url_count = process.make_chart(chart_data, chart_settings)
+    return  chart_url_count
+
+
+
+
+def get_link_word_count():
+
+    ls= LinkStat.select(fn.COUNT(LinkStat._id).alias('word_count'),LinkStat.link_norm_count)\
+    .where(LinkStat.link_norm_count < 10).group_by(LinkStat.link_norm_count).dicts()
+
+    y=[i['word_count'] for i in ls]
+    x=[i['link_norm_count'] for i in ls]
+
+    chart_data = {'x':x,'y':y, 'type':'bar'}
+
+    chart_settings = {'title':'Кол-во слов в ссылках'}
+
+    chart_url_count = process.make_chart(chart_data, chart_settings)
+
+    return  chart_url_count
+
+
+
+def get_link_sim(pos_checked, count_checked, syntax_checked):
+
+    features_list_pos = {
+                    'pos_NOUN':LinkStat.link_ps_NOUN,
+                    'pos_ADJ':LinkStat.link_ps_ADJ,
+                    'pos_VERB':LinkStat.link_ps_VERB
+                    }
+
+    query= LinkStat.select(LinkStat.sim_stfidf5_link, fn.Count(LinkStat.id).alias('count'))
+    #query_full_info = LinkStat.select()
+
+    if 'pos_all' not in pos_checked:
+        feature_cond = []
+        for i in pos_checked:
+            o = operator.eq(features_list_pos[i], 1)
+            feature_cond.append(o)
+
+        expr = reduce(operator.or_, feature_cond)
+        query = query.where(expr)
+
+        #query_full_info = query_full_info.where(expr)
+
+
+    query = query.group_by(LinkStat.sim_stfidf5_link)
+
+    if 'count_all' not in count_checked:
+        feature_cond = []
+        for c_che in count_checked:
+
+            n = int(c_che.split('_')[1])
+            if n > 3:
+                feature_cond.extend([4,5,6,7,8,9,10])
+            else:
+
+                feature_cond.append(n)
+
+        #expr = reduce(operator.and_, feature_cond)
+        query = query.where(LinkStat.link_norm_count.in_(feature_cond))
+        #query_full_info = query_full_info.where(LinkStat.link_norm_count.in_(feature_cond))
+
+    root_dict = {'syntax_linkroot' :1, 'syntax_linknoroot' :0}
+    if 'syntax_all' not in syntax_checked:
+
+        feature_cond = []
+        for s_che in syntax_checked:
+            feature_cond.append(root_dict[s_che])
+
+        query = query.where(LinkStat.link_is_root.in_(feature_cond))
+    #full_info = query_full_info.limit(100)
+
+    sim_count = [i for i in query.order_by(LinkStat.sim_stfidf5_link).dicts()]
+
+    sim_count = pd.DataFrame(sim_count)
+    sim_count.sim_stfidf5_link = sim_count.sim_stfidf5_link.apply(lambda x: round(float(x), 2))
+    sim_count = sim_count.groupby('sim_stfidf5_link').sum().to_dict()
+
+
+    x=[i[0] for i in sim_count['count'].items()]
+    y=[i[1] for i in sim_count['count'].items()]
+
+    chart_data = {'x':x,'y':y, 'type':'bar'}
+
+    chart_settings = {'title':'Распределение по степени близости', 'height':300}
+    chart = process.make_chart(chart_data, chart_settings)
+
+    return  chart #full_info
+
+
+def get_link_sim_word(word):
+    '''Распределение по близости для одного слова'''
+
+    query= LinkStat.select(LinkStat.link_norm, LinkStat.sim_stfidf5_link)\
+    .where(LinkStat.link_norm == word).order_by(LinkStat.sim_stfidf5_link)
+
+    sim_count = [i for i in query.dicts()]
+
+    sim_count = pd.DataFrame(sim_count)
+    sim_count.sim_stfidf5_link = sim_count.sim_stfidf5_link.apply(lambda x: round(float(x), 2))
+    sim_count = sim_count.groupby('sim_stfidf5_link').count().to_dict()
+
+    #return sim_count
+
+    x=[i[0] for i in sim_count['link_norm'].items()]
+    y=[i[1] for i in sim_count['link_norm'].items()]
+
+    chart_data = {'x':x,'y':y, 'type':'bar'}
+
+    chart_settings = {'title':'Распределение по степени близости', 'height':300}
+    chart = process.make_chart(chart_data, chart_settings)
+
+    return  chart
+
+
 def make_chart(chart_data, chart_settings):
     # , mode='markers'
 

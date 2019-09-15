@@ -1,11 +1,16 @@
 source_domains = ['government.ru', 'sledcom.ru', 'mid.ru',  'cbr.ru', 'gks.ru',
 'kremlin.ru', 'interfax.ru', 'novayagazeta.ru', 'rbc.ru',  'sport.rbc.ru',
 'tass.ru', 'vedomosti.ru', 'tvrain.ru', 'izvestia.ru','iz.ru',  'ria.ru',
-'pikabu.ru', 'kommersant.ru']
+'pikabu.ru', 'kommersant.ru', 'habr.com']
 
-skip_pages_queque = '[^>]+(@|\/tag\/|\.ru\/images\/|author|im[0-9]\.|comments|\
-issues|video|sujet|multimedia|theme|\.ru\/photo|\/edits\/)[^>]+'
+# skip_pages_queque = '[^>]+(@|\/tag\/|\.ru\/images\/|author|im[0-9]\.|comments|\
+# issues|video|sujet|multimedia|theme|\.ru\/photo|\/edits\/|\/ru\/users)[^>]+'
 
+filter_pages = '[^>]+(@|\/tag\/|\.ru\/images\/|author|im[0-9]\.|comments|\
+issues|video|sujet|multimedia|theme|users|\.ru\/photo|\/edits\/)[^>]+'
+
+
+queque_limit = 100
 
 ua= [
     'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',

@@ -51,14 +51,12 @@ def save_content(to_insert):
 def get_hrefs_queque():
     """Получение ссылок в очереди"""
 
-    include_pages = '[^>]+({})[^>]+'.format('|'.join(config.source_domains))
-    #skip_pages = config.skip_pages_queque
-    skip_pages = '[^>]+(@|\/tag\/|\.ru\/images\/|author|im[0-9]\.|comments|\
-    issues|video|sujet|multimedia|theme|\.ru\/photo|\/edits\/)[^>]+'
-    #
-    #
+    include_pages = '[^>]+({})[^>]+'.format('|'.join(config.source_domains[-1:]))
+    print(include_pages)
+    filter_pages = config.filter_pages
+
     query= LinkQueque.select(LinkQueque.url, LinkQueque.url_domain).where(LinkQueque.status == 'wait')\
-    .where(~LinkQueque.url.iregexp(skip_pages))\
+    .where(~LinkQueque.url.iregexp(filter_pages))\
     .where(LinkQueque.url.iregexp(include_pages))\
     .order_by(LinkQueque.id.desc()).limit(200).dicts()
 
@@ -74,6 +72,7 @@ def update_queque(url, status='saved'):
     query.execute()
 
     return True
+
 
 def check_data(x):
     queque_status = 'saved'
@@ -168,18 +167,19 @@ def run_cf():
 def run_op():
 
     links = get_hrefs_queque()
-    for l in links:
-        try:
-            t = get_text(l)
-        except Exception as e:
-            print(e)
+    print(links)
+    # for l in links:
+    #     try:
+    #         t = get_text(l)
+    #     except Exception as e:
+    #         print(e)
 
 
 # p = Pool(processes=5)
 if __name__ == '__main__':
 
-    # run_op()
-    run_cf()
+    run_op()
+    # run_cf()
 
     # dd = '2013-07-12T13:25:06+0400'
     # ddx = datetime.datetime.strptime(dd,'%Y-%m-%dT%H:%M:%S%z').date()

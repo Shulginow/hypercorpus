@@ -34,7 +34,7 @@ def update_data(data):
             try:
                 media=x['media']
             except:
-                media = helper_html.get_domain(x['url'])
+                media = helper_html.get_host(x['url'])
 
             update = {}
             for k in ['text', 'title', 'subtitle']:

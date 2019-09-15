@@ -115,8 +115,8 @@ def make_df(info_total):
     df = pd.DataFrame(info_total)
     df.columns = ['source_url_original','source_url','link_text','document_url',
                   'link_sentense','document_link_html','raw_data_id']
-    df['document_domain'] = df.document_url.apply(helper_html.get_domain)
-    df['source_domain'] = df.source_url.apply(helper_html.get_domain)
+    df['document_domain'] = df.document_url.apply(helper_html.get_host)
+    df['source_domain'] = df.source_url.apply(helper_html.get_host)
 
     df = df[df.link_sentense!=False]
 

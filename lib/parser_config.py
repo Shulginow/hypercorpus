@@ -31,23 +31,26 @@ class NewsParser:
         """Чтение определенного тега, заданного в настройках"""
         tags_list = []
 
-        for e in html_elements:
-            data = soup.find(*e[:2])
-            if data is not None:
+        try:
+            for e in html_elements:
+                data = soup.find(*e[:2])
+                if data is not None:
 
-                if len(e) == 3:
-                    txt = data.find_all(e[2])
-                    txt = ' '.join(str(v) for v in txt)
-                elif len(e) == 4:
-                    txt = soup.find(*e[:2]).get(e[3])
-                else:
-                    try:
-                        txt = data.text
-                    except:
-                        txt = ''
+                    if len(e) == 3:
+                        txt = data.find_all(e[2])
+                        txt = ' '.join(str(v) for v in txt)
+                    elif len(e) == 4:
+                        txt = soup.find(*e[:2]).get(e[3])
+                    else:
+                        try:
+                            txt = data.text
+                        except:
+                            txt = ''
+                    if len(txt):
+                        tags_list.append(txt)
 
-                if len(txt):
-                    tags_list.append(txt)
+        except Exception as e:
+            pass
                 #print('не найден', str(e))
         response = ' '.join(tags_list)
         response = re.sub('\s+', ' ', response).strip()
@@ -519,6 +522,19 @@ class Telegram(NewsParser):
         self.hrefs =  [['div',{'class':'tgme_widget_message_text'},'a']]
         self.author = [['div',{'class':'tgme_widget_message_owner_name'}]]
         self.tags = []
+
+
+class Habr(NewsParser):
+    def __init__(self):
+        """Constructor"""
+        self.media = 'habr.com'
+        self.title = [['span',{'class':'post__title-text'}]]
+        self.subtitle = []
+        self.articledate = [['span', {'class': 'post__time'}, False, 'data-time_published']]
+        self.text =  [['div',{'class':'post__body_full'}]]
+        self.hrefs = [['div',{'class':'post__body_full'}, 'a']]
+        self.author = [['span',{'class':'user-info__nickname'}]]
+        self.tags = [['li',{'class':'inline-list__item_tag'}]]
 
 
 class Pikabu(NewsParser):

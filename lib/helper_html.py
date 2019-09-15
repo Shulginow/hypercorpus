@@ -98,7 +98,7 @@ class HtmlProcess:
     #
     #     return domain
 
-    def get_domain(self,url):
+    def get_host(self,url):
         """Получение домена ссылки"""
 
         x = re.findall('//(?:www\.)?[^\/]+',url)

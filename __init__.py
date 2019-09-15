@@ -24,264 +24,7 @@ def _db_close(exc):
     if not MSQLDB.is_closed():
         MSQLDB.close()
 
-MSQLDB.create_tables([LinkStat, LinkQueque], safe=True  )
-
-
-
-
-
-# @app.route('/')
-# def index():
-
-    # select = {"status":{'$regex': 'wait'}, "host_page":{'$exists': True}}
-    # links = mongo.db.links_queque.find(select).limit(10)
-    #
-    # text_urls = len(mongo.db.text_total.distinct('url'))
-    # processed_urls = [i['document_url'] for i in mongo.db.links_stat_3.find({}, {'document_url':1,'_id':0})]
-    # processed_urls_num = len(processed_urls)
-    # processed_documents = len(list(set(processed_urls)))
-
-    # return render_template("index.html",
-    #     links=links, processed_urls=processed_urls_num, processed_documents=processed_documents,text_urls=text_urls)
-
-# @app.route('/restore_data')
-# def restore_data():
-#     processed_links = LinkStat.select().dicts()
-#     # processed_links = [i for i in processed_links if]
-#     for pl in processed_links:
-#         for i in ['sim_domain_link', 'sim_stext_link', 'sim_stext_lsentense',
-#             'sim_stfidf10_ltext', 'sim_stfidf5_link', 'sim_stfidf5_link_max',
-#             'sim_stfidf_ltfidf','sim_stitle_link', 'sim_stitle_lsentense']:
-#             pl[i] = float(pl[i])
-#         #return str(i)
-#         insert_response = mongo.db.links_stat_3.insert_one(pl)
-#
-#     return str(pl)
-
-@app.route('/move_data')
-def move_data():
-    processed_links = mongo.db.links_stat_3.find({})
-    # processed_links = [i for i in processed_links if]
-
-    data_df = pd.DataFrame([i for i in processed_links] )
-    data_df = data_df.fillna(0)
-
-    drop_names = ['raw_text_id','text_sim_w_tf_ifd', 'raw_text_if','source_text',
-    'source_text_elements_norm','source_text_norm']
-
-    for i in drop_names:
-        if i in data_df.columns:
-            data_df = data_df.drop([i], axis=1)
-
-    data_df = data_df.drop_duplicates(subset=['document_url','source_url','link_text'])
-
-    #processed_links = data_df.to_dict()
-        #with MSQLDB.atomic():
-            #LinkStat.insert_many(processed_links).on_conflict('replace').execute()
-
-    for index, pl in data_df.iterrows():
-        try:
-            pl  = pl.to_dict()
-            pl['link_norm_count'] = len(pl['link_norm'].split(' '))
-            LinkStat.insert(**pl).on_conflict('replace').execute()
-
-        except Exception as e:
-            print(str(e))
-
-    return str(pl)
-
-
-
-# @app.route('/move_text')
-# def move_text():
-#     for n in range(0,200000, 100):
-#         processed_links = mongo.db.text_total.find({}).skip(n).limit(100)
-#         # processed_links = [i for i in processed_links if]
-#
-#         data_df = pd.DataFrame([i for i in processed_links] )
-#         data_df = data_df.fillna('')
-#         if 'rubrics' not in data_df.columns:
-#             data_df['rubrics'] = 'not_set'
-#         #data_df = data_df.drop_duplicates(subset=['document_url','source_url','link_text'])
-#         #processed_links = data_df.to_dict()
-#             #with MSQLDB.atomic():
-#                 #LinkStat.insert_many(processed_links).on_conflict('replace').execute()
-#         for index, pl in data_df.iterrows():
-#
-#             try:
-#                 pl  = pl.to_dict()
-#                 TextTotal.insert(**pl).on_conflict('replace').execute()
-#
-#             except Exception as e:
-#                 print(str(e))
-#
-#     return str(pl)
-
-
-
-
-
-def get_domain_count():
-
-    ls= LinkStat.select(LinkStat.document_domain,fn.Count(LinkStat.id)\
-    .alias('count')).group_by(LinkStat.document_domain)\
-    .having(fn.Count(LinkStat.id) > 100).order_by(fn.Count(LinkStat.id).desc()).dicts()
-    ls = [i for i in ls]
-
-    x=[i['document_domain'] for i in ls]
-    y=[i['count'] for i in ls]
-
-    chart_data = {'x':x,'y':y, 'type':'bar'}
-    chart_settings = {'title':'Количество сайтов со ссылками'}
-    chart_url_count = process.make_chart(chart_data, chart_settings)
-    return  chart_url_count
-
-
-# def get_domain_pair_count():
-#
-#     ls= LinkStat.select(LinkStat.document_domain,LinkStat.source_domain,fn.Count(LinkStat.id)\
-#     .alias('count')).group_by(LinkStat.document_domain, LinkStat.source_domain).dicts()
-#     ls = [i for i in ls]
-#
-#     y=['{}-{}'.format(i['document_domain'], i['source_domain']) for i in ls]
-#     x=[i['count'] for i in ls]
-#
-#     chart_data = {'x':x,'y':y, 'type':'bar', 'orientation':'h'}
-#
-#     chart_settings = {'title':'Количество пар сайтов со ссылками'}
-#
-#     chart_markup = process.make_chart(chart_data,chart_settings)
-#
-#     return  chart_markup
-
-
-# def get_df():
-#     df = mongo.db.terms_df.find({}).limit(100).sort('df', -1)
-#     df = [i for i in df]
-#     # return df
-#     x = [i['df'] for i in df]
-#     y = [i['term'] for i in df]
-#
-#     chart_data = {'x':x,'y':y, 'type':'bar', 'orientation':'h'}
-#     chart_settings = {'title':'Топ DF','height':2000    }
-#
-#     chart_markup = process.make_chart(chart_data,chart_settings)
-#
-#     return  chart_markup
-
-def get_link_word_count():
-
-    ls= LinkStat.select(fn.COUNT(LinkStat._id).alias('word_count'),LinkStat.link_norm_count)\
-    .where(LinkStat.link_norm_count < 10).group_by(LinkStat.link_norm_count).dicts()
-
-    y=[i['word_count'] for i in ls]
-    x=[i['link_norm_count'] for i in ls]
-
-    chart_data = {'x':x,'y':y, 'type':'bar'}
-
-    chart_settings = {'title':'Кол-во слов в ссылках'}
-
-    chart_url_count = process.make_chart(chart_data, chart_settings)
-
-    return  chart_url_count
-
-
-
-def get_link_sim(pos_checked, count_checked, syntax_checked):
-
-    features_list_pos = {
-                    'pos_NOUN':LinkStat.link_ps_NOUN,
-                    'pos_ADJ':LinkStat.link_ps_ADJ,
-                    'pos_VERB':LinkStat.link_ps_VERB
-                    }
-
-    query= LinkStat.select(LinkStat.sim_stfidf5_link, fn.Count(LinkStat.id).alias('count'))
-    #query_full_info = LinkStat.select()
-
-    if 'pos_all' not in pos_checked:
-        feature_cond = []
-        for i in pos_checked:
-            o = operator.eq(features_list_pos[i], 1)
-            feature_cond.append(o)
-
-        expr = reduce(operator.or_, feature_cond)
-        query = query.where(expr)
-
-        #query_full_info = query_full_info.where(expr)
-
-
-    query = query.group_by(LinkStat.sim_stfidf5_link)
-
-    if 'count_all' not in count_checked:
-        feature_cond = []
-        for c_che in count_checked:
-
-            n = int(c_che.split('_')[1])
-            if n > 3:
-                feature_cond.extend([4,5,6,7,8,9,10])
-            else:
-
-                feature_cond.append(n)
-
-        #expr = reduce(operator.and_, feature_cond)
-        query = query.where(LinkStat.link_norm_count.in_(feature_cond))
-        #query_full_info = query_full_info.where(LinkStat.link_norm_count.in_(feature_cond))
-
-    root_dict = {'syntax_linkroot' :1, 'syntax_linknoroot' :0}
-    if 'syntax_all' not in syntax_checked:
-
-        feature_cond = []
-        for s_che in syntax_checked:
-            feature_cond.append(root_dict[s_che])
-
-        query = query.where(LinkStat.link_is_root.in_(feature_cond))
-    #full_info = query_full_info.limit(100)
-
-    sim_count = [i for i in query.order_by(LinkStat.sim_stfidf5_link).dicts()]
-
-    sim_count = pd.DataFrame(sim_count)
-    sim_count.sim_stfidf5_link = sim_count.sim_stfidf5_link.apply(lambda x: round(float(x), 2))
-    sim_count = sim_count.groupby('sim_stfidf5_link').sum().to_dict()
-
-
-    x=[i[0] for i in sim_count['count'].items()]
-    y=[i[1] for i in sim_count['count'].items()]
-
-    chart_data = {'x':x,'y':y, 'type':'bar'}
-
-    chart_settings = {'title':'Распределение по степени близости', 'height':300}
-    chart = process.make_chart(chart_data, chart_settings)
-
-    return  chart #full_info
-
-
-def get_link_sim_word(word):
-    '''Распределение по близости для одного слова'''
-
-    query= LinkStat.select(LinkStat.link_norm, LinkStat.sim_stfidf5_link)\
-    .where(LinkStat.link_norm == word).order_by(LinkStat.sim_stfidf5_link)
-
-    sim_count = [i for i in query.dicts()]
-
-    sim_count = pd.DataFrame(sim_count)
-    sim_count.sim_stfidf5_link = sim_count.sim_stfidf5_link.apply(lambda x: round(float(x), 2))
-    sim_count = sim_count.groupby('sim_stfidf5_link').count().to_dict()
-
-    #return sim_count
-
-    x=[i[0] for i in sim_count['link_norm'].items()]
-    y=[i[1] for i in sim_count['link_norm'].items()]
-
-    chart_data = {'x':x,'y':y, 'type':'bar'}
-
-    chart_settings = {'title':'Распределение по степени близости', 'height':300}
-    chart = process.make_chart(chart_data, chart_settings)
-
-    return  chart #full_info
-
-
-
-#full_info
+# MSQLDB.create_tables([LinkStat, LinkQueque, Content], safe=True  )
 
 
 @app.route('/sim_words_count', methods = ['POST', 'GET'])
@@ -334,11 +77,11 @@ def sim_words_count():
 @app.route('/stat_docs')
 def stat_docs():
 
-    #chart_domain_count = get_domain_count()
+    #chart_domain_count = process.get_domain_count()
     graphs = [
-        get_domain_count(),
+        process.get_domain_count(),
         process.get_link_pos(),
-        get_link_word_count()
+        process.get_link_word_count()
     ]
     ids = ['Диаграмма {}'.format(i+1) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
@@ -356,11 +99,11 @@ def about():
 @app.route('/stat_docs_1')
 def stat_docs_1():
 
-    #chart_domain_count = get_domain_count()
+    #chart_domain_count = process.get_domain_count()
     graphs = [
-        get_domain_count(),
+        process.get_domain_count(),
         process.get_link_pos(),
-        get_link_word_count()
+        process.get_link_word_count()
     ]
 
     #return str(graphs[0]['data'])
@@ -407,7 +150,7 @@ def stat_links_sim():
         count_checked = ['count_all']
         syntax_checked = ['syntax_all']
 
-    graphs  = [get_link_sim(pos_checked, count_checked, syntax_checked)]
+    graphs  = [process.get_link_sim(pos_checked, count_checked, syntax_checked)]
     #return str(charts)
 
     ids = ['Диаграмма {}'.format(i+1) for i, _ in enumerate(graphs)]
@@ -475,7 +218,7 @@ def text_by_phrase():
         phrase = request.args.get('ph', default = 'x')
 
         graphs = [
-            get_link_sim_word(phrase)
+            process.get_link_sim_word(phrase)
         ]
 
         ids = ['Диаграмма {}'.format(i+1) for i, _ in enumerate(graphs)]

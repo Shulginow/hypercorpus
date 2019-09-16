@@ -51,7 +51,7 @@ def save_content(to_insert):
 def get_hrefs_queque():
     """Получение ссылок в очереди"""
 
-    include_pages = '[^>]+({})[^>]+'.format('|'.join(config.source_domains[-1:]))
+    include_pages = '[^>]+({})[^>]+'.format('|'.join(config.source_hosts[-1:]))
     print(include_pages)
     filter_pages = config.filter_pages
 
@@ -88,29 +88,42 @@ def check_data(x):
     return queque_status
 
 
-def get_text(link, sleep_time = 2):
+def get_content_input(link, sleep_time = 2):
+
+    url = link['url']
+    host = link['url_domain']
+
+    return get_content(url, host, sleep_time)
+
+
+def get_content_single(url, host):
+    """"""
+    class_dict = get_parser_list()
+    parser_config = class_dict[host]
+    x = get_data(parser_config, url)
+
+    return x
+
+
+def get_content(url, host, sleep_time):
     """Получение текста по ссылке"""
     x = {}
 
-    domain = link['url_domain']
-    url = link['url']
-
     class_dict = get_parser_list()
 
-    if domain in class_dict:
-        parser_config = class_dict[domain]
-
+    if host in class_dict:
+        parser_config = class_dict[host]
         print(url)
 
         check  = Content.select(Content.url).where(Content.url == url).first()
-        print
+
         if check is None:
             print('Сохраняем')
             time.sleep(sleep_time)
             # try:
 
             x = get_data(parser_config, url)
-            x['media'] = domain
+            x['media'] = host
 
             queque_status = check_data(x)
 
@@ -118,67 +131,55 @@ def get_text(link, sleep_time = 2):
                 print('saved')
                 save_content(x)
 
-            # except Exception as e:
-            #     queque_status = 'error'
-            #     print('Error', e)
 
         else:
             print('Сохранено ранее')
             queque_status = "saved_before"
 
     else:
-        queque_status = "error_domain_filter"
-        print('Domain not in list', url)
+        queque_status = "error_host_filter"
+        print('host not in list', url)
 
     print(queque_status)
     update_queque(url, status=queque_status)
 
     return x
 
-# def mongo_connect():
-#     mgclient = pymongo.MongoClient("mongodb://localhost:27017/")
-#     sp_db = mgclient["semproxydb"]
-#     return sp_db
-# def run_mp():
-#     url_list = get_hrefs_queque()
-#     random.shuffle(url_list)
-#     print(url_list)
-#
-#     print('Начинаем чтение...')
-#     map_results = p.map(get_text, url_list)
-#     print('Готово')
-    # p.terminate()
 
-def run_cf():
+def run_queque_cp():
+    '''Получение данных для доменов из очереди в несколько потоков'''
     concurrency = 5
     url_list = get_hrefs_queque()
     random.shuffle(url_list)
     print(url_list)
 
     with ThreadPoolExecutor(concurrency) as executor:
-        for _ in executor.map(get_text, url_list):
+        for _ in executor.map(get_content, url_list):
             pass
-
-
 
     print('Готово')
 
 
-def run_op():
-
+def run_queque_op():
+    '''Получение данных для доменов из очереди в один поток'''
     links = get_hrefs_queque()
-    print(links)
-    # for l in links:
-    #     try:
-    #         t = get_text(l)
-    #     except Exception as e:
-    #         print(e)
+    for l in links:
+        try:
+            t = get_content_input(l)
+        except Exception as e:
+            print(e)
+
+
+def run_url(url, host):
+    '''Получение данных для доменов из очереди в один поток'''
+    r = get_content(url, host, 2)
+    return r
 
 
 # p = Pool(processes=5)
 if __name__ == '__main__':
 
-    run_op()
+    run_queque_op()
     # run_cf()
 
     # dd = '2013-07-12T13:25:06+0400'

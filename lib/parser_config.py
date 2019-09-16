@@ -510,7 +510,6 @@ class Instagram(NewsParser):
         self.media = 'instagram.com'
 
 
-
 class Telegram(NewsParser):
     def __init__(self):
         """Constructor"""
@@ -531,7 +530,7 @@ class Habr(NewsParser):
         self.title = [['span',{'class':'post__title-text'}]]
         self.subtitle = []
         self.articledate = [['span', {'class': 'post__time'}, False, 'data-time_published']]
-        self.text =  [['div',{'class':'post__body_full'}]]
+        self.text =  [['div',{'class':'post__body_full'}, 'div']]
         self.hrefs = [['div',{'class':'post__body_full'}, 'a']]
         self.author = [['span',{'class':'user-info__nickname'}]]
         self.tags = [['li',{'class':'inline-list__item_tag'}]]

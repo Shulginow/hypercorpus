@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, 'lib')
+
 import os
 import filters
 import json
@@ -6,6 +9,7 @@ import pandas as pd
 import numpy as np
 import operator
 import process
+import parser_content
 
 from peewee import *
 from models import *
@@ -25,6 +29,53 @@ def _db_close(exc):
         MSQLDB.close()
 
 # MSQLDB.create_tables([LinkStat, LinkQueque, Content], safe=True  )
+
+
+@app.route('/', methods = ['POST', 'GET'])
+def stat_links_index():
+
+    pos_options, count_options, syntax_options = filters.get_filter_fields()
+
+    if request.method == 'POST':
+        f = request.form
+
+        pos_checked = [i[0] for i in f.items() if 'pos' in i[0]]
+        if len(pos_checked) == 0:
+            pos_checked = ['pos_all']
+
+        count_checked = [i[0] for i in f.items() if 'count' in i[0]]
+        if len(count_checked) == 0:
+            count_checked = ['count_all']
+
+        syntax_checked = [i[0] for i in f.items() if 'syntax' in i[0]]
+        if len(syntax_checked) == 0:
+            syntax_checked = ['syntax_all']
+
+        #return str(pos_checked)
+    else:
+        result = []
+        pos_checked = ['pos_all']
+        count_checked = ['count_all']
+        syntax_checked = ['syntax_all']
+
+    charts, phrase_data = process.get_link_words(pos_checked, count_checked, syntax_checked)
+
+    graphs = [
+        charts
+    ]
+
+    ids = ['Диаграмма {}'.format(i+1) for i, _ in enumerate(graphs)]
+
+    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+
+    t = render_template('charts_pos.html',ids=ids,graphJSON=graphJSON,
+        pos_options=pos_options, pos_checked=pos_checked, count_options=count_options,
+        syntax_options=syntax_options,syntax_checked=syntax_checked,
+        count_checked=count_checked, phrase_data=phrase_data)
+
+    return t
+
+
 
 
 @app.route('/sim_words_count', methods = ['POST', 'GET'])
@@ -166,49 +217,7 @@ def stat_links_sim():
     return t
 
 
-@app.route('/', methods = ['POST', 'GET'])
-def stat_links_index():
 
-    pos_options, count_options, syntax_options = filters.get_filter_fields()
-
-    if request.method == 'POST':
-        f = request.form
-
-        pos_checked = [i[0] for i in f.items() if 'pos' in i[0]]
-        if len(pos_checked) == 0:
-            pos_checked = ['pos_all']
-
-        count_checked = [i[0] for i in f.items() if 'count' in i[0]]
-        if len(count_checked) == 0:
-            count_checked = ['count_all']
-
-        syntax_checked = [i[0] for i in f.items() if 'syntax' in i[0]]
-        if len(syntax_checked) == 0:
-            syntax_checked = ['syntax_all']
-
-        #return str(pos_checked)
-    else:
-        result = []
-        pos_checked = ['pos_all']
-        count_checked = ['count_all']
-        syntax_checked = ['syntax_all']
-
-    charts, phrase_data = process.get_link_words(pos_checked, count_checked, syntax_checked)
-
-    graphs = [
-        charts
-    ]
-
-    ids = ['Диаграмма {}'.format(i+1) for i, _ in enumerate(graphs)]
-
-    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
-
-    t = render_template('charts_pos.html',ids=ids,graphJSON=graphJSON,
-        pos_options=pos_options, pos_checked=pos_checked, count_options=count_options,
-        syntax_options=syntax_options,syntax_checked=syntax_checked,
-        count_checked=count_checked, phrase_data=phrase_data)
-
-    return t
 
 
 @app.route('/text_by_phrase')
@@ -444,6 +453,20 @@ def sim_corr_syn():
     except Exception as e:
         return str(e)
 
+
+
+@app.route('/check_page', methods = ['POST', 'GET'])
+def check_page():
+    url = 'https://habr.com/ru/post/186708/'
+    host = 'habr.com'
+
+    # url = 'https://www.rbc.ru/politics/12/09/2019/5d7a2d599a79472beb8896d5'
+    # host = 'rbc.ru'
+
+
+    r = parser_content.get_content_single(url, host)
+    # t = render_template('check_page.html')
+    return str(r)
 
 
 

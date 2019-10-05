@@ -1,5 +1,4 @@
 import sys
-# sys.path.insert(0, '../lib')
 sys.path.insert(0, '..')
 sys.path.insert(0, '/home/v/vstoch2s/semproxy/Hyperco/')
 import requests
@@ -12,14 +11,14 @@ import config
 import datetime
 
 from concurrent.futures import ThreadPoolExecutor
-
-
-# from multiprocessing import Pool
 from models import *
 from bs4 import BeautifulSoup
 from helper_html import HtmlProcess
+from helper_text import TxtParser
 
+helper_text = TxtParser()
 helper_html = HtmlProcess()
+
 
 def get_parser_list():
     """Список парсеров"""
@@ -40,6 +39,14 @@ def get_data(class_inst, href):
     return x
 
 
+def html_normalise(text):
+    '''Нормализация текста'''
+
+    text = helper_text.clean_html(text)
+    text_norm = helper_text.text_normalise(text,use_stop_words = True)
+    return text_norm
+
+
 def save_content(to_insert):
     """"""
 
@@ -56,8 +63,8 @@ def get_hrefs_queque():
     filter_pages = config.filter_pages
 
     query= LinkQueque.select(LinkQueque.url, LinkQueque.url_domain).where(LinkQueque.status == 'wait')\
-    .where(~LinkQueque.url.iregexp(filter_pages))\
     .where(LinkQueque.url.iregexp(include_pages))\
+    .where(~LinkQueque.url.iregexp(filter_pages))\
     .order_by(LinkQueque.id.desc()).limit(200).dicts()
 
     links_queque = [a for a in query]
@@ -95,41 +102,53 @@ def get_content_input(link, sleep_time = 2):
 
     return get_content(url, host, sleep_time)
 
+#
+# def get_content_single(url, host):
+#     """"""
+#     class_dict = get_parser_list()
+#     parser_config = class_dict[host]
+#     x = get_data(parser_config, url)
+#
+#     return x
 
-def get_content_single(url, host):
-    """"""
-    class_dict = get_parser_list()
-    parser_config = class_dict[host]
-    x = get_data(parser_config, url)
 
-    return x
+def normalize_elements(data):
+    '''Лемматизация элементов тектса'''
+
+    for key in ['text', 'title', 'subtitle']:
+        norm_key = '{}_normalized'.format(key)
+        data[norm_key] = html_normalise(data[key])
+
+    return data
 
 
-def get_content(url, host, sleep_time):
+def get_content(url, host, sleep_time =2):
     """Получение текста по ссылке"""
-    x = {}
-
+    data = {}
     class_dict = get_parser_list()
 
     if host in class_dict:
         parser_config = class_dict[host]
         print(url)
 
-        check  = Content.select(Content.url).where(Content.url == url).first()
+        url_key = helper_html.clean_http(url)
+        check  = Content.select(Content.url_key).where(Content.url_key == url_key).first()
 
         if check is None:
             print('Сохраняем')
             time.sleep(sleep_time)
             # try:
 
-            x = get_data(parser_config, url)
-            x['media'] = host
+            data = get_data(parser_config, url)
+            data['media'] = host
+            data['url_key'] = url_key
 
-            queque_status = check_data(x)
+            data = normalize_elements(data)
+            queque_status = check_data(data)
 
             if queque_status == 'saved':
                 print('saved')
-                save_content(x)
+                save_content(data)
 
 
         else:
@@ -143,18 +162,18 @@ def get_content(url, host, sleep_time):
     print(queque_status)
     update_queque(url, status=queque_status)
 
-    return x
+    return data
 
 
 def run_queque_cp():
     '''Получение данных для доменов из очереди в несколько потоков'''
-    concurrency = 5
+    concurrency = 3
     url_list = get_hrefs_queque()
     random.shuffle(url_list)
     print(url_list)
 
     with ThreadPoolExecutor(concurrency) as executor:
-        for _ in executor.map(get_content, url_list):
+        for _ in executor.map(get_content_input, url_list):
             pass
 
     print('Готово')
@@ -172,17 +191,10 @@ def run_queque_op():
 
 def run_url(url, host):
     '''Получение данных для доменов из очереди в один поток'''
-    r = get_content(url, host, 2)
+    r = get_content_input(url, host, 1)
     return r
 
-
-# p = Pool(processes=5)
 if __name__ == '__main__':
 
-    run_queque_op()
-    # run_cf()
-
-    # dd = '2013-07-12T13:25:06+0400'
-    # ddx = datetime.datetime.strptime(dd,'%Y-%m-%dT%H:%M:%S%z').date()
-    # e = ['time', {'class': 'story__datetime'}, False, 'datetime']
-    # sf = soup.find(*e[:2])
+    #run_queque_op()
+    run_queque_cp()

@@ -1,4 +1,4 @@
-source_domains = ['government.ru', 'sledcom.ru', 'mid.ru',  'cbr.ru', 'gks.ru',
+source_hosts = ['government.ru', 'sledcom.ru', 'mid.ru',  'cbr.ru', 'gks.ru',
 'kremlin.ru', 'interfax.ru', 'novayagazeta.ru', 'rbc.ru',  'sport.rbc.ru',
 'tass.ru', 'vedomosti.ru', 'tvrain.ru', 'izvestia.ru','iz.ru',  'ria.ru',
 'pikabu.ru', 'kommersant.ru', 'habr.com']

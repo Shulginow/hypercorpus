@@ -93,6 +93,32 @@ def parse_text(element):
     return href_list
 
 
+ def text_check_content(text):
+    """Проверка текста 1 - на то что это не просто сборник ссылок
+
+    0 - слишком много ссылок
+    1 - все ок
+    2 - нет текста
+    3 - ссылок нет
+    """
+
+    response = 0
+    link_text = ' '.join(helper_html.define_links_text(text))
+    total_text =  helper_html.clean_html(text)
+
+    if len(link_text) == 0:
+        return 3
+    if len(total_text) == 0:
+        return 2
+
+    link_ratio = len(link_text) / len(total_text)
+
+    if link_ratio < .5 and link_ratio > 0:
+        response = 1
+
+    return response
+
+
 def get_link_info(hrefs):
     """Систематизация данных"""
     info_total = []

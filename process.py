@@ -21,10 +21,8 @@ def get_domain_count():
 
     chart_data = {'x':x,'y':y, 'type':'bar'}
     chart_settings = {'title':'Количество сайтов со ссылками'}
-    chart_url_count = process.make_chart(chart_data, chart_settings)
+    chart_url_count = make_chart(chart_data, chart_settings)
     return  chart_url_count
-
-
 
 
 def get_link_word_count():
@@ -39,7 +37,7 @@ def get_link_word_count():
 
     chart_settings = {'title':'Кол-во слов в ссылках'}
 
-    chart_url_count = process.make_chart(chart_data, chart_settings)
+    chart_url_count = make_chart(chart_data, chart_settings)
 
     return  chart_url_count
 
@@ -108,12 +106,11 @@ def get_link_sim(pos_checked, count_checked, syntax_checked):
     chart_data = {'x':x,'y':y, 'type':'bar'}
 
     chart_settings = {'title':'Распределение по степени близости', 'height':300}
-    chart = process.make_chart(chart_data, chart_settings)
+    chart = make_chart(chart_data, chart_settings)
 
     return  chart #full_info
 
-
-def get_link_sim_word(word):
+def get_link_dist(word):
     '''Распределение по близости для одного слова'''
 
     query= LinkStat.select(LinkStat.link_norm, LinkStat.sim_stfidf5_link)\
@@ -133,7 +130,7 @@ def get_link_sim_word(word):
     chart_data = {'x':x,'y':y, 'type':'bar'}
 
     chart_settings = {'title':'Распределение по степени близости', 'height':300}
-    chart = process.make_chart(chart_data, chart_settings)
+    chart = make_chart(chart_data, chart_settings)
 
     return  chart
 
@@ -259,6 +256,66 @@ def get_link_words_bubble(pos_checked, count_checked, syntax_checked):
     return  chart_url_count, ls
 
 
+def get_search(q):
+
+    ls = Content.raw("""
+            SELECT link_norm, count(t2.id) count, avg(sim_stfidf5_link) sim_mean
+            FROM content t1
+            JOIN link_stat t2 on t1.url_key = t2.document_url
+            WHERE MATCH (title_normalized,text_normalized) AGAINST ('{}')
+            GROUP BY link_norm
+            HAVING count > 1
+            ORDER BY count DESC
+            """.format(q))
+
+    ls = [i for i in ls]
+
+    return  ls
+
+
+def get_linked(q):
+
+    ls = Content.raw("""
+            SELECT
+                url_key,
+                title,
+                COUNT(DISTINCT document_url) as links_count,
+                GROUP_CONCAT(DISTINCT(document_url) SEPARATOR '; ') input_documents,
+                GROUP_CONCAT(link_norm SEPARATOR '; ') input_anchors
+            FROM `content` t1
+            INNER JOIN link_stat t2 on t2.source_url = t1.url_key
+            WHERE url_key not like 'iz.ru' and MATCH (title_normalized,text_normalized) AGAINST ('{}')
+            GROUP BY url_key
+            HAVING links_count > 1
+            ORDER BY links_count DESC
+            """.format(q))
+
+    # ls = [i for i in ls]
+    content_list = []
+
+    for i in ls :
+        i.input_anchors =[x.strip() for x in i.input_anchors.split(';')]
+        i.input_documents = [x.strip() for x in i.input_documents.split(';')]
+
+        content_list.append(i)
+
+    anchors_count = Content.raw("""
+            SELECT
+                t2.link_norm,
+                COUNT(DISTINCT t2.document_url) as links_count
+            FROM `content` t1
+            INNER JOIN link_stat t2 on t2.source_url = t1.url_key
+            WHERE url_key not like 'iz.ru' and MATCH (title_normalized,text_normalized) AGAINST ('{}')
+            GROUP BY link_norm
+            HAVING links_count > 1
+            ORDER BY links_count DESC
+            """.format(q))
+
+
+    return  content_list, anchors_count
+
+
+    # .from_(inner)
 
 def get_link_words(pos_checked, count_checked, syntax_checked):
 

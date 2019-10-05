@@ -1,5 +1,6 @@
 import sys
 sys.path.insert(0, 'lib')
+sys.path.insert(0, '/home/v/vstoch2s/semproxy/Hyperco/lib')
 
 import os
 import filters
@@ -28,7 +29,8 @@ def _db_close(exc):
     if not MSQLDB.is_closed():
         MSQLDB.close()
 
-# MSQLDB.create_tables([LinkStat, LinkQueque, Content], safe=True  )
+MSQLDB.create_tables([LinkStat, LinkStatOut, LinkQueque, Content, TermsDf], safe=True  )
+
 
 
 @app.route('/', methods = ['POST', 'GET'])
@@ -74,6 +76,31 @@ def stat_links_index():
         count_checked=count_checked, phrase_data=phrase_data)
 
     return t
+
+
+@app.route('/search', methods = ['POST', 'GET'])
+def search():
+    if request.method == 'GET':
+        q = request.args.get('q')
+        phrase_data = process.get_search(q)
+        t = render_template('phrase_list.html', q = q, phrase_data=phrase_data)
+
+        return t
+
+
+
+@app.route('/linked', methods = ['POST', 'GET'])
+def linked():
+    if request.method == 'GET':
+
+        try:
+            q = request.args.get('q')
+            content_list, anchors_count = process.get_linked(q)
+
+            t = render_template('textlink_list.html', q = q, content_list=content_list, anchors_count=anchors_count)
+        except Exception as e:
+            t = str(e)
+        return t
 
 
 
@@ -227,7 +254,7 @@ def text_by_phrase():
         phrase = request.args.get('ph', default = 'x')
 
         graphs = [
-            process.get_link_sim_word(phrase)
+            process.get_link_dist(phrase)
         ]
 
         ids = ['Диаграмма {}'.format(i+1) for i, _ in enumerate(graphs)]

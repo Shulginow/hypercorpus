@@ -20,6 +20,22 @@ class BaseModel(Model):
     class Meta:
         database = MSQLDB
 
+
+class LinkStatOut(BaseModel):
+
+    document_domain = CharField()
+    document_link_html = TextField()
+    document_url = CharField(1000)
+    link_text = TextField()
+    source_domain = CharField()
+    source_url = CharField()
+    link_sentense = TextField()
+    
+    class Meta:
+        database = MSQLDB
+        table_name = 'link_stat_out'
+
+
 class LinkStat(BaseModel):
 
     _id = CharField(unique = True)
@@ -98,6 +114,7 @@ class LinkQueque(BaseModel):
 class Content(BaseModel):
 
     url = CharField(1000)
+    url_key = CharField(300)
     hrefs = TextField()
     text = TextField()
     articledate = CharField()
@@ -109,7 +126,19 @@ class Content(BaseModel):
     text_normalized = TextField()
     title_normalized = TextField()
     subtitle_normalized = TextField()
+    status = CharField(45)
+
 
     class Meta:
         database = MSQLDB
         table_name = 'content'
+
+
+class TermsDf(BaseModel):
+
+    term = CharField(1000)
+    df = IntegerField()
+
+    class Meta:
+        database = MSQLDB
+        table_name = 'terms_df'
